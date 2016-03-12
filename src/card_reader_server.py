@@ -25,7 +25,7 @@ from smartcard.util import *
 from twisted.python import log
 from twisted.internet import reactor
 
-from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
+from autobahn.websocket import WebSocketServerProtocol, WebSocketServerFactory
 
 
 VALID_CARD_READERS = ['ACS ACR122U 00 00']
