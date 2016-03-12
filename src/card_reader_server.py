@@ -28,7 +28,7 @@ from twisted.internet import reactor
 from autobahn.websocket import WebSocketServerProtocol, WebSocketServerFactory
 
 
-VALID_CARD_READERS = ['ACS ACR122U 00 00']
+VALID_CARD_READERS = ['ACS ACR122U']
 
 
 class PrintObserver(CardObserver):
@@ -110,10 +110,11 @@ valid_reader_index = -1
 
 # Check if any valid readers are connected
 for i in range(len(r)):
-    if str(r[i]) in VALID_CARD_READERS:
-        valid_reader_index = i
+    for valid_card_reader in VALID_CARD_READERS:
+        if str(r[i]).find(valid_card_reader) > -1:
+            valid_reader_index = i
 
-        break
+            break
 
 # Only start the server if any valid readers are connected
 if valid_reader_index >= 0:
