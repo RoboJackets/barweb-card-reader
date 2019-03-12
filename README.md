@@ -1,8 +1,6 @@
-# Barweb card reader
+# Apiary NFC Reader
 
-Script for piping NFC card ID to Barweb through a web socket.
-
-Using Python 2.7.
+Script for piping GTID / Prox # from BuzzCards to Apiary through a web socket.
 
 
 ## Package requirements
@@ -10,22 +8,22 @@ Using Python 2.7.
 * libusb
 * libpcsclite
 * libnfc
-* python-pyscard
-* python-twisted
-* python-autobahn
 * pcscd
 
 On Ubuntu, the packages can be installed using the following command;
 
 ```
-sudo apt-get install libusb-dev libpcsclite-dev libnfc-dev python-pyscard python-twisted python-autobahn pcscd
+sudo apt-get install libusb-dev libpcsclite-dev libnfc-dev pcscd
 ```
 
+```
+pip install -r requirements.txt
+```
 
 ## Running the script
 
 To run the script, issue the following command;
 
 ```
-python src/card_reader_server.py
+python card_reader_server.py
 ```
