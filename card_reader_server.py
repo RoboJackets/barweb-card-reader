@@ -1,35 +1,13 @@
-#!/usr/bin/env python2.7
-
-""""
-Copyright 2016 Studentmediene i Trondheim AS
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""""
-
 import sys
 
 from smartcard.System import readers
 from smartcard.CardMonitoring import CardMonitor, CardObserver
 from smartcard.util import *
-
 from twisted.python import log
 from twisted.internet import reactor
-
-from autobahn.websocket import WebSocketServerProtocol, WebSocketServerFactory
-
+from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
 
 VALID_CARD_READERS = ['ACS ACR122U']
-
 
 class PrintObserver(CardObserver):
     def update(self, observable, cards):
@@ -42,13 +20,16 @@ class PrintObserver(CardObserver):
             # Connect to the reader
             connection.connect()
 
-            # Fetche card ID
-            data = connection.transmit([0xFF, 0xCA, 0x00, 0x00, 0x00])[0]
-            uid = toHexString(list(reversed(data))).replace(' ', '')
-            card_number = int(uid, 16)
+            # App BBBBCD
+            select_app_data = connection.transmit([0x90, 0x5a, 0x00, 0x00, 3, 0xcd, 0xbb, 0xbb, 0x00])
+
+            # File 0x01
+            read_file_data = connection.transmit([0x90, 0xbd, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00])[0]
+            file_data_hex = toHexString(read_file_data)
+            file_data_byte = bytearray.fromhex(file_data_hex).decode().split("=")
 
             # Pipe card ID to the web socket
-            WebSocket.broadcast_message(str(card_number))
+            WebSocket.broadcast_message(str(file_data_byte))
 
 
 class WebSocket(WebSocketServerProtocol):
@@ -100,7 +81,7 @@ class WebSocket(WebSocketServerProtocol):
 log.startLogging(sys.stdout)
 
 # The actual web socket
-factory = WebSocketServerFactory(u'ws://localhost:9000', debug=False)
+factory = WebSocketServerFactory(u'ws://localhost:9000')
 factory.protocol = WebSocket
 
 # Initialize readers
