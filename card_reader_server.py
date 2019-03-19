@@ -29,7 +29,7 @@ class PrintObserver(CardObserver):
             file_data_byte = bytearray.fromhex(file_data_hex).decode().split("=")
 
             # Pipe card ID to the web socket
-            WebSocket.broadcast_message(str(file_data_byte))
+            WebSocket.broadcast_message(str(file_data_byte[0]))
 
 
 class WebSocket(WebSocketServerProtocol):
