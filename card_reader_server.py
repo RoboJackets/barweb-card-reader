@@ -6,10 +6,12 @@ from smartcard.util import *
 from twisted.python import log
 from twisted.internet import reactor
 from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
+from smartcard.Exceptions import CardConnectionException
 
 VALID_CARD_READERS = ['ACS ACR122U']
 
 class PrintObserver(CardObserver):
+
     def update(self, observable, cards):
         """
         Read data from present card, and pipe card ID to the web socket
@@ -20,13 +22,36 @@ class PrintObserver(CardObserver):
             # Connect to the reader
             connection.connect()
 
-            # App BBBBCD
-            select_app_data = connection.transmit([0x90, 0x5a, 0x00, 0x00, 3, 0xcd, 0xbb, 0xbb, 0x00])
+            try:
+                # Disable the standard buzzer when a tag is detected. It sounds
+                # immediately after placing a tag resulting in people lifting the tag off before
+                # we've had a chance to read the data.
+                # Note: this runs on the first card presentation, so that one will get two beeps.
+                connection.transmit([0xFF, 0x00, 0x52, 0x00, 0x00])
 
-            # File 0x01
-            read_file_data = connection.transmit([0x90, 0xbd, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00])[0]
-            file_data_hex = toHexString(read_file_data)
-            file_data_byte = bytearray.fromhex(file_data_hex).decode().split("=")
+                # App BBBBCD
+                select_app_data = connection.transmit([0x90, 0x5a, 0x00, 0x00, 3, 0xcd, 0xbb, 0xbb, 0x00])
+
+                # File 0x01
+                read_file_data = connection.transmit([0x90, 0xbd, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00])[0]
+                file_data_hex = toHexString(read_file_data)
+                file_data_byte = bytearray.fromhex(file_data_hex).decode().split("=")
+            except (IndexError, CardConnectionException):
+                print("Error reading card")
+
+                # TODO: Find a way to send this command without a transmit error since no card is present
+                # Until this gets fixed, the LED turns off in error state without a beep
+
+                # Beep twice and change LED to orange to indicate an error
+                # p2 = int('11001111', 2)
+                # connection.transmit([0xFF, 0x00, 0x40, p2, 0x04, 0x03, 0x00, 0x01, 0x00])
+                return 0
+
+            # Beep and change LED to green to signal user we've read the tag.
+            # LED stays green until the card is removed
+            # Manual Reference: Section 6.2 (Bi-color LED and Buzzer Control)
+            p2 = int('10101010', 2)
+            connection.transmit([0xFF, 0x00, 0x40, p2, 0x04, 0x02, 0x00, 0x01, 0x01])
 
             # Pipe card ID to the web socket
             WebSocket.broadcast_message(str(file_data_byte[0]))
