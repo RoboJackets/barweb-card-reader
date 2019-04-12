@@ -13,7 +13,7 @@ Script for piping GTID / Prox # from BuzzCards to Apiary through a web socket.
 On Ubuntu, the packages can be installed using the following command;
 
 ```
-sudo apt-get install libusb-dev libpcsclite-dev libnfc-dev pcscd
+sudo apt-get install libusb-dev libpcsclite-dev libnfc-dev pcscd swig
 ```
 
 ```
