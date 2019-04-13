@@ -27,3 +27,18 @@ To run the script, issue the following command;
 ```
 python card_reader_server.py
 ```
+
+## Supervisor configuration
+
+To run the script using Supervisor, use the following configuration:
+
+```
+[program:apiary-nfc-reader]
+directory=<path to where you cloned it>
+command=python card_reader_server.py
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=<pick a location>
+user=<pick a user>
+```
