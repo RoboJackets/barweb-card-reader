@@ -65,7 +65,7 @@ class PrintObserver(CardObserver):
             if keyboard_enabled:
                 keyboard.type(str(file_data_byte[0]))
                 keyboard.press(Key.enter)
-
+                keyboard.release(Key.enter)
 
 class WebSocket(WebSocketServerProtocol):
     connections = list()
