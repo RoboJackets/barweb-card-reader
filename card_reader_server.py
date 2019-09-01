@@ -1,21 +1,27 @@
 import sys
-
-from smartcard.System import readers
-from smartcard.CardMonitoring import CardMonitor, CardObserver
+import argparse
 from smartcard.util import *
 from twisted.python import log
 from twisted.internet import reactor
-from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
+from smartcard.System import readers
+from pynput.keyboard import Key, Controller
 from smartcard.Exceptions import CardConnectionException
+from smartcard.CardMonitoring import CardMonitor, CardObserver
+from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
 
 VALID_CARD_READERS = ['ACS ACR122U']
+connection = False
+socket_enabled = False
+keyboard_enabled = False
+keyboard = False
 
 class PrintObserver(CardObserver):
-
     def update(self, observable, cards):
-        """
-        Read data from present card, and pipe card ID to the web socket
-        """
+        global connection
+        global keyboard
+        global keyboard_enabled
+        global socket_enabled
+
         added_cards, removed_cards = cards
 
         if len(added_cards) > 0:
@@ -53,8 +59,12 @@ class PrintObserver(CardObserver):
             p2 = int('10101010', 2)
             connection.transmit([0xFF, 0x00, 0x40, p2, 0x04, 0x02, 0x00, 0x01, 0x01])
 
-            # Pipe card ID to the web socket
-            WebSocket.broadcast_message(str(file_data_byte[0]))
+            # Pipe card ID to the enabled output(s)
+            if socket_enabled:
+                WebSocket.broadcast_message(str(file_data_byte[0]))
+            if keyboard_enabled:
+                keyboard.type(str(file_data_byte[0]))
+                keyboard.press(Key.enter)
 
 
 class WebSocket(WebSocketServerProtocol):
@@ -101,40 +111,60 @@ class WebSocket(WebSocketServerProtocol):
         for c in set(cls.connections):
             reactor.callFromThread(cls.sendMessage, c, payload)
 
+def main():
+    global connection
+    global keyboard
+    global socket_enabled
+    global keyboard_enabled
 
-# Log to standard output
-log.startLogging(sys.stdout)
+    # Log to standard output
+    log.startLogging(sys.stdout)
 
-# The actual web socket
-factory = WebSocketServerFactory(u'ws://localhost:9000')
-factory.protocol = WebSocket
+    # Parse arguments
+    parser = argparse.ArgumentParser(description='Apiary NFC Card Reader Server')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-k', action='store_true', help='Keyboard Emulation Mode')
+    group.add_argument('-s', action='store_true', help='WebSocket Mode')
+    args = parser.parse_args()
+    socket_enabled = args.s
+    keyboard_enabled = args.k
 
-# Initialize readers
-r = readers()
-valid_reader_index = -1
+    if socket_enabled:
+        # Initialize web socket
+        log.msg('Enabling WebSocket Mode (localhost:9000)')
+        factory = WebSocketServerFactory(u'ws://localhost:9000')
+        factory.protocol = WebSocket
+        reactor.listenTCP(9000, factory)
 
+    if keyboard_enabled:
+        # Initialize keyboard emulation
+        keyboard = Controller()
 
-# Check if any valid readers are connected
-for i in range(len(r)):
-    for valid_card_reader in VALID_CARD_READERS:
-        if str(r[i]).find(valid_card_reader) > -1:
-            valid_reader_index = i
+    # Initialize readers
+    r = readers()
+    valid_reader_index = -1
 
-            break
+    # Check if any valid readers are connected
+    for i in range(len(r)):
+        for valid_card_reader in VALID_CARD_READERS:
+            if str(r[i]).find(valid_card_reader) > -1:
+                valid_reader_index = i
+                break
 
-# Only start the server if any valid readers are connected
-if valid_reader_index >= 0:
-    # Create the connection the the reader
-    connection = r[valid_reader_index].createConnection()
+    # Only start the server if any valid readers are connected
+    if valid_reader_index >= 0:
+        # Create the connection the the reader
+        connection = r[valid_reader_index].createConnection()
 
-    # Variable for detecting presence of cards on the reader
-    card_monitor = CardMonitor()
-    card_observer = PrintObserver()
+        # Variable for detecting presence of cards on the reader
+        card_monitor = CardMonitor()
+        card_observer = PrintObserver()
 
-    card_monitor.addObserver(card_observer)
+        card_monitor.addObserver(card_observer)
 
-    # Run the web socket
-    reactor.listenTCP(9000, factory)
-    reactor.run()
-else:
-    print('No valid readers connected.')
+        reactor.run()
+    else:
+        print('No valid readers connected.')
+
+if __name__ == '__main__':
+    main()

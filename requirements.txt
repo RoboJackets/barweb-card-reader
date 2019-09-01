@@ -1,3 +1,5 @@
 pyscard
 Twisted
 autobahn
+argparse
+pynput
