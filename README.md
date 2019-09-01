@@ -25,7 +25,7 @@ The script supports running either as a WebSocket server or a keyboard emulator.
 The mode is determined with a parameter (`-s` for WebSocket, `-k` for keyboard).
 
 
-###Keyboard Mode:
+### Keyboard Mode:
 ```
 python card_reader_server.py -k
 ```
@@ -36,7 +36,7 @@ On **macOS**, one of the following must be true:
 - The application must be white listed in _System Preferences_ -> _Security_ -> _Privacy_ -> _Accessibility_. 
 Depending on the version of macOS, your terminal emulator and/or IDE may also need to be whitelisted.
 
-###WebSocket Mode:
+### WebSocket Mode:
 ```
 python card_reader_server.py -s
 ```
