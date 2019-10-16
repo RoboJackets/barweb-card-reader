@@ -19,6 +19,12 @@ sudo apt-get install libusb-dev libpcsclite-dev libnfc-dev pcscd swig
 pip install -r requirements.txt
 ```
 
+### Kernel Module Conflicts
+
+If you're running this on Ubuntu, you'll likely get a "No readers connected" error when running the script. That's because one of the default kernel modules conflicts with the Python smart card libraries. You can disable the conflicting module by making this change:
+
+`sudo echo "blacklist pn533_usb" >> /etc/modprobe.d/blacklist-libnfc.conf`
+
 ## Running the script
 
 The script supports running either as a WebSocket server or a keyboard emulator.
