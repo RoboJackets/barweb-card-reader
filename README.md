@@ -57,7 +57,7 @@ To run the script using Supervisor, use the following configuration:
 ```
 [program:apiary-nfc-reader]
 directory=<path to where you cloned it>
-command=DISPLAY=":0" python card_reader_server.py <-k or -s>
+command=bash -c 'DISPLAY=":0" python card_reader_server.py <-k or -s>'
 autostart=true
 autorestart=true
 redirect_stderr=true
