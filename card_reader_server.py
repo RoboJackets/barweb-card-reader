@@ -63,7 +63,7 @@ class PrintObserver(CardObserver):
             if socket_enabled:
                 WebSocket.broadcast_message(str(file_data_byte[0]))
             if keyboard_enabled:
-                keyboard.type(str(file_data_byte[0]))
+                keyboard.type("NFC-" + str(file_data_byte[0]))
                 keyboard.press(Key.enter)
                 keyboard.release(Key.enter)
 
