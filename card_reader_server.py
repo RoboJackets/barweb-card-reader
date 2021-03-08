@@ -14,6 +14,7 @@ connection = False
 socket_enabled = False
 keyboard_enabled = False
 keyboard = False
+prefix = None
 
 class PrintObserver(CardObserver):
     def update(self, observable, cards):
@@ -60,10 +61,11 @@ class PrintObserver(CardObserver):
             connection.transmit([0xFF, 0x00, 0x40, p2, 0x04, 0x02, 0x00, 0x01, 0x01])
 
             # Pipe card ID to the enabled output(s)
+            gtid_string = "{}{}".format(prefix, str(file_data_byte[0])) if prefix else str(file_data_byte[0])
             if socket_enabled:
-                WebSocket.broadcast_message(str(file_data_byte[0]))
+                WebSocket.broadcast_message(gtid_string)
             if keyboard_enabled:
-                keyboard.type("NFC-" + str(file_data_byte[0]))
+                keyboard.type(gtid_string)
                 keyboard.press(Key.enter)
                 keyboard.release(Key.enter)
 
@@ -116,6 +118,7 @@ def main():
     global keyboard
     global socket_enabled
     global keyboard_enabled
+    global prefix
 
     # Log to standard output
     log.startLogging(sys.stdout)
@@ -125,6 +128,7 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-k', action='store_true', help='Keyboard Emulation Mode')
     group.add_argument('-s', action='store_true', help='WebSocket Mode')
+    parser.add_argument('--prefix', help='Prefix a given string before the GTID number, ex. NFC-902900000')
     args = parser.parse_args()
     socket_enabled = args.s
     keyboard_enabled = args.k
@@ -139,6 +143,9 @@ def main():
     if keyboard_enabled:
         # Initialize keyboard emulation
         keyboard = Controller()
+
+    if args.prefix is not None:
+        prefix = args.prefix
 
     # Initialize readers
     r = readers()
