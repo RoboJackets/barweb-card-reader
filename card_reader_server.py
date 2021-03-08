@@ -61,11 +61,11 @@ class PrintObserver(CardObserver):
             connection.transmit([0xFF, 0x00, 0x40, p2, 0x04, 0x02, 0x00, 0x01, 0x01])
 
             # Pipe card ID to the enabled output(s)
-            gtid_string = "{}{}".format(prefix, str(file_data_byte[0])) if prefix else str(file_data_byte[0])
+            gtid = "{}{}".format(prefix, str(file_data_byte[0])) if prefix is not None else str(file_data_byte[0])
             if socket_enabled:
-                WebSocket.broadcast_message(gtid_string)
+                WebSocket.broadcast_message(gtid)
             if keyboard_enabled:
-                keyboard.type(gtid_string)
+                keyboard.type(gtid)
                 keyboard.press(Key.enter)
                 keyboard.release(Key.enter)
 
